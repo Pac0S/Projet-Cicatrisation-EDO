@@ -1,27 +1,10 @@
-%% Turing 2D: FitzHugh-Nagumo 
-
-% parametre des equations
-%epsilon = 0.08;
-%b = 0.7;
-%c = 0.8;
-D = 0.0005;
-Dc = 0.45;
-c0 = 5;
-n0 = 5;
-a = 5; % facteur de croissance des cellules
-lambda = 2;
-alpha = 1;
-cm = 10;
-k = 3;
-H = 2*k;
-%I = 0.32;
+clear all; clf;
 
 
-beta = (c0*c0+cm*cm-2*h*c0*cm)/((c0-cm)*(c0-cm));
+%%Paramètres 
+s = 20;%taille du cadre
+h=0.2;
 
-% parametres de simulation, espace
-s = 20; % taille domaine (carre sxs)
-h = 10;
 x0 = 0;
 x1 = s;
 y0 = 0;
@@ -31,14 +14,47 @@ y = y0:h:y1;
 [X,Y] = meshgrid(x,y);
 J = length(x);
 J2 = J*J;
-C1 = 2; %Taille de la cicatrice
-C2 = 5;
 
-% variable dynamiques
-n = zeros(J2,1); % stocke seulement l'etat au temps t
-c = zeros(J2,1);
+N = ones(J,J);
+C = ones(J,J);
+N(18:32,22:28)=0;
+C(18:32,22:28)=0;
+
+
+n = ones(J2,1);
+c = ones(J2,1);
+
 newn = zeros(J2,1);
 newc = zeros(J2,1);
+
+%Definition de la zone blessée
+for i = 8/h:12/h
+    n((8+i*20)/h+i:(12+i*20)/h+i)=0;
+    c((8+i*20)/h:(12+i*20)/h)=0;
+end
+
+
+
+%%paramètres de simulation
+tfinal = 100;
+t0 = 0;
+t = t0;
+dt = 0.1;
+
+
+%%Variables
+D = 1;
+Dc = 1;
+lambda = 1;
+cm = 2;
+H = 10;
+k = 0.01;
+n0 = 1;
+c0 = 0.5;
+alpha = 0.1;
+
+beta = (c0*c0+cm*cm-2*h*c0*cm)/((c0-cm)*(c0-cm));
+
 
 
 % Condition periodiques
@@ -105,19 +121,8 @@ L(coinbasdroit,coinbasdroit-1) = 1;
 L(coinbasdroit,coinbasdroit-J*(J-1)) = 1;
 L(coinbasdroit,coinbasdroit-J) = 1;
 
-% condition initiales
 
-n = -1 + 0.1*(-1 + 2*rand(J^2,1)); 
-c = -0.3 + 0.1*(-1 + 2*rand(J^2,1));
-
-
-% parametres de simulation, temps
-t0 = 0;
-tfinal = 200; 
-t = t0;
-% dt doit etre < a h^2/2/d/D ou dim d = 2+
-dt = min(1,0.2*( h^2/4/max(D,Dc) ));
- 
+%imagesc(N);
 
 figure(1); clf;
 surf(X,Y,reshape(n,J,J),'EdgeColor','none');
@@ -125,22 +130,29 @@ view(2)
 drawnow;
 tk = 0;
 
-
 % BOUCLE PRINCIPALE
 while t < tfinal
     drawnow;
-    newn = D*dt/(h^2)*L*n; + k*((2*cm*(h-beta)*c)/(cm*cm)+c*c) - k*n;
-    newc = Dc*dt/(h^2)*L*c; + lambda*c0*n/n0*((n0*n0+alpha*alpha)/(n*n+alpha*alpha)) - lambda * c;
+    a =  k*((2*cm*(h-beta)*c(i)));
+    b = (cm*cm)+c(i)^2;
+    Ln = del2(n);
+    Lc = del2(c);
+    newn = n + D*Ln + k*((2*cm*(h-beta)*c)/(cm*cm+sum(c.*c))+beta) - k*n  ;
+    newc = c + Dc*Lc + lambda*c0*(n/n0)*((n0^2+alpha^2)/(sum(n.*n)+alpha^2)) - lambda * c;
+    %newn = n + n*D*dt/(h^2)*L;
+    %newn = n*D*dt/(h^2)*L + k*((2*cm*(h-beta)*c)/(cm*cm)+c^2) - k*n;
+    %newc = c*Dc*dt/(h^2)*L + lambda*c0*n/n0*((n0^2+alpha^2)/(n.*n+alpha^2)) - lambda * c;
     n = newn;
     c = newc;
+            
+            
     if tk > 1 
         t
         surf(X,Y,reshape(n,J,J),'EdgeColor','none');
         view(2)
         drawnow;
         tk = 0;
-        
-    end
+    end 
     t = t + dt;
     tk = tk + dt;
 end
