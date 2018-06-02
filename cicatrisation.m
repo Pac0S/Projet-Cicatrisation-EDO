@@ -15,11 +15,6 @@ y = y0:h:y1;
 J = length(x);
 J2 = J*J;
 
-N = ones(J,J);
-C = ones(J,J);
-N(18:32,22:28)=0;
-C(18:32,22:28)=0;
-
 
 n = ones(J2,1);
 c = ones(J2,1);
@@ -36,29 +31,31 @@ end
 
 
 %%paramètres de simulation
-tfinal = 200;
+tfinal = 100000;
 t0 = 0;
 t = t0;
-dt = 0.1;
+dt = 5;
 
 
 %%Variables
-D = 0.01;
-Dc = 0.02;
-lambda = 1;
-cm = 2;
-H = 10;
-k = 0.1;
-n0 = 1;
-c0 = 0.5;
+D = 0.0005;
+Dc = 0.45;
 alpha = 0.1;
+lambda = 30;
+c0 = 1;
+cm = 40;
+H = 10;
+k = 1;
+n0 = 1;
 
-beta = (c0*c0+cm*cm-2*h*c0*cm)/((c0-cm)*(c0-cm));
+
+
+beta = (c0^2+cm^2-2*h*c0*cm)/((c0-cm)^2);
 
 
 
 % Condition periodiques
-L = sparse(1:J2,1:J2,-4); % matrice creuse, compacte en memoire
+L = sparse(1:J2,1:J2,-2); % matrice creuse, compacte en memoire
 coinhautgauche = 1;
 coinbasgauche = J;
 coinhautdroit = J*(J-1)+1;
@@ -142,7 +139,8 @@ L(coinbasdroit,coinbasdroit-J) = 1;
 %imagesc(N);
 
 figure(1); clf;
-surf(X,Y,reshape(n,J,J),'EdgeColor','none');
+%surf(X,Y,reshape(n,J,J),'EdgeColor','none');
+surf(X,Y,reshape(c,J,J),'EdgeColor','none');
 view(2)
 drawnow;
 tk = 0;
@@ -151,37 +149,54 @@ pause
 % BOUCLE PRINCIPALE
 while t < tfinal
     drawnow;
-    %a =  k*((2*cm*(h-beta)*c(i)));
-    %b = (cm*cm)+c(i)^2;
     
-    %Ln = del2(n);
-    %Lc = del2(c);
-    %newn = n + D*Ln %+ k*((2*cm*(h-beta)*c)/(cm*cm+sum(c.*c))+beta) - k*n  ;
-    %newc = c + Dc*Lc %+ lambda*c0*(n/n0)*((n0^2+alpha^2)/(sum(n.*n)+alpha^2)) - lambda * c;
-    %newn = n + D*dt/(h^2)*L*n;
+    %s = k*((2*cm*-H-beta)*c/(cm^2+c.^2))+beta;
+    f = (lambda*c0/n0)*((n0^2+alpha^2)/(n.^2+alpha^2))*n
+
+
+    newn(1:J,1) = 100;
+    newn(J2-J:J2,1)=1;
+   
+    for i = 1:J-1
+        newn(i*J+1,1)=1;
+        newn(i*J,1)=1;
+    end
     
-    newn = n + D*dt/(h^2)*L*n;% +k*c;%+ ...
-       %k*((2*cm*(h-beta)*c)/(cm*cm)+c.^2) - ...
+    
+    newc(1:J,1) = 100;
+    newc(J2-J:J2,1)=1;
+   
+    for i = 1:J-1
+        newc(i*J+1,1)=1;
+        newc(i*J,1)=1;
+    end
+    
+    
+    newn = n + D*dt/(h^2)*L*n;% + ...
+       %s*n - ...
        %k*n;
     
-    newc = c + Dc*dt/(h^2)*L*c;% + k*n;%+ ...
-       %lambda*c0*n/n0*((n0^2+alpha^2)/(n.^2+alpha^2)) - ...
+    newc = c + D*dt/(h^2)*L*c;% + ...
+       %f*n - ...
        %lambda * c;
+       
+  
         
     n = newn;
     c = newc;
             
             
-    if tk > 1 
+    %if tk > 1 
         t
-        surf(X,Y,reshape(n,J,J),'EdgeColor','none');
+        %surf(X,Y,reshape(n,J,J),'EdgeColor','none');
+        surf(X,Y,reshape(c,J,J),'EdgeColor','none');
         view(2)
         drawnow;
         tk = 0;
-    end
+    %end
     
-    t = t + k;
-    tk = tk + k;
+    t = t + dt;
+    %tk = tk + k;
     
     
 end
