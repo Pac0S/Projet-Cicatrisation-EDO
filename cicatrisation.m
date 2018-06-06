@@ -1,7 +1,8 @@
 clear all; clf;
 
 
-%%Paramètres 
+%% Paramètres graphiques
+
 s = 20;%taille du cadre
 h=0.2;
 
@@ -17,17 +18,17 @@ J2 = length(y);
 J=J1*J2;
 
 
-%%Variables
-D = 0.01;
-Dc = 0.4;
-alpha = 0.1;
-lambda = 5;
-c0 = 1;
-cm = 40;
-H = 10;
-k = 1;
-n0 = 1;
+%% Variables de simulation
 
+D = 200;
+Dc = 0.1;
+
+H = 10;
+k = 0.01;
+
+cm = 40;
+n0 = 1;
+c0 = 1;
 
 n = ones(J,1);
 c = ones(J,1);
@@ -35,10 +36,15 @@ c = ones(J,1);
 newn = ones(J,1);
 newc = ones(J,1);
 
+alpha = 0.1;
+lambda = 10;
+
+beta = (c0^2+cm^2-2*H*c0*cm)/((c0-cm)^2);
 
 
 
 
+%% Laplacien discretisé
 
 coinbasgauche = 1;
 coinhautgauche = J1;
@@ -64,65 +70,92 @@ L = L + sparse(interieur,interieur-J2,1,J,J);
 
 
 
-
-%%Conditions initiales
-c(1:J)=1;
-n(1:J)=0.9;
-
-
-%%Conditions aux bords de Dirichlet
-c(interieur)=1;
+%{
+%% Conditions aux bords de Dirichlet
 c(bord) = 1;
-%c(borddroit) = 0.5;
-
 n(bord)=1;
 newn(bord)=1;
 newc(bord)=1;
+%}
 
 
-%Definition de la zone blessée
+%% Conditions initiales : zone blessée
+
+% L = 8-2 = 6 
+% l = 9-11 = 2
+
+% dimensions de la blessures : 4*16 : (2:18, 8:12)
+
+indices_blessure = ones(4/h,16/h).*(2/h*J1+8/h+1 : 2/h*J1 + 12/h)'; % Initialisation d'un vecteur aux dimentions de la blessures*
+pas = 1:16/h; %Initialisation d'un vecteur de pas
+indblessure = indices_blessure + J1* pas; %Indices des points de la blessure stockés dans une matrice
+
+vectbles = indblessure(:); %Indices des points de la blessure stockés dans un vecteur
 
 
-for i = 8/h:12/h
-    n((8+i*s)/h+i:(12+i*s)/h+i)=0;
-    c((8+i*s)/h+i:(12+i*s)/h+i)=0;
-end
+c(vectbles) = 0; %Zone blessée : concentrations nulles
 
-%%paramètres de simulation
-tfinal = 10;
+%% Conditions initiales :Zone non blessée + condition de Dirichlet
+
+nonbles = setdiff(1:J, vectbles); % Zone non blessée : concentrations à 1
+c(nonbles) = 1;
+n(nonbles)=1;
+
+
+%{
+%%  Bords de la blessure : conditions de Dirichlet
+
+basgauche = 2/h*J1+8/h+1;
+hautgauche = 2/h*J1 + 12/h;
+basdroite = 18/h*J1+8/h+1;
+hautdroite = 18/h*J1 + 12/h;
+
+
+gauche =  basgauche+1:hautgauche-1;
+droite =  basdroite+1:hautdroite-1;
+bas = basgauche+J1 : J1 : basdroite - J1;
+haut = hautgauche + J1 : J1 : hautdroite - J1;
+
+matbordbles = [basgauche, gauche, hautgauche, bas, haut, basdroite, droite, hautdroite];
+bordbles = matbordbles(:);
+
+c(bordbles) = 1;
+newc(bordbles) = 1;
+
+%}
+
+%% Paramètres de simulation
+tfinal = 30;
 t0 = 0;
 t = t0;
 dt = 0.5*h^2/(4*max(D,Dc));
+
+
+%% Evolution de n et c dans la zone saine
 vect_t = t0:dt:tfinal;
 vect_n = zeros(size(vect_t));
 vect_c = zeros(size(vect_t));
 
 
 
-
-
-beta = (c0^2+cm^2-2*h*c0*cm)/((c0-cm)^2);
-
-
-
-
-
+%% Affichage 
 
 %imagesc(N);
 
 figure(1); clf;
-%surf(X,Y,reshape(n,J,J),'EdgeColor','none');
+surf(X,Y,reshape(n,J1,J2),'EdgeColor','none');
 surf(X,Y,reshape(c,J1,J2),'EdgeColor','none');
 shading flat
-view(3)
-axis([0 20 0 20 0 6])
+view(2)
+%view(3)
+%axis([0 20 0 20 0 6])
 colorbar;
 caxis([0,1]);
 drawnow;
 tk = 0;
 pause
 
-% BOUCLE PRINCIPALE
+%% BOUCLE PRINCIPALE
 i=1;
 while t < tfinal
     drawnow;
@@ -140,24 +173,13 @@ while t < tfinal
     %f = lambda*c0/n0.*n
 
 
-   
-     %
+
+    newn = n + dt*  (D/(h^2)*L*n +  ((((H-1).*c+H*c0)./(2*(H-1).*c+c0)*k).*n).*(2-n/n0)      - k*n);  
+    newn(nonbles) = 1; %Dirichlet
+
     
-    newn =n + dt*  (D/(h^2)*L*n +  ((((H-1).*c+H*c0)./(2*(H-1).*c+c0)*k).*n).*(2-n/n0)      - k*n);
-         
-       
-      
-   
-    newn(bord) = 1;
-    
-    
-    
-     %
     newc =c + dt* (D/(h^2)*L*c      + lambda*c0/n0.*n/3      - lambda * c);
-      
-       
-    newc(bord)=1;
-       
+    newc(nonbles) = 1; %Dirichlet
   
         
     n = newn;
@@ -166,10 +188,11 @@ while t < tfinal
             
     %if tk > 1
         t
-        %surf(X,Y,reshape(n,J1,J2),'EdgeColor','none');
+        surf(X,Y,reshape(n,J1,J2),'EdgeColor','none');
         surf(X,Y,reshape(c,J1,J2),'EdgeColor','none');
-        view(3)
-        axis([0 20 0 20 0 10])
+        view(2)
+        %view(3)
+        %axis([0 20 0 20 0 10])
         colorbar;
         caxis([0,1]);
         drawnow;
