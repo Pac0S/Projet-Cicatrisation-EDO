@@ -67,8 +67,6 @@ while t < tfinal
     % on calcule pour chaque mutant une probabilite de se reproduire
     % (les individus non porteurs ne se reproduisent pas)
     
-        % on calcule pour chaque mutant une probabilite de se reproduire
-    % (les individus non porteurs ne se reproduisent pas)
     w  = dt*r*g;                                   % probabilite de se reproduire
     irep = find(rand(1,N0) < w);                 % realisation 
     % un individu se reproduisant remplace l'individu le plus proche
