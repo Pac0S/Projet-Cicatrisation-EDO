@@ -86,9 +86,9 @@ while t < tfinal
     y = abs(y); % condition en x0 reflechissant
     
     % affichage
-    % plot(x(g),y(g),'b.',x(~g),y(~g),'r.') % chaque point est un individu
+     plot(x(g),y(g),'b.',x(~g),y(~g),'r.') % chaque point est un individu
     % (porteur en bleu et wild-type en rouge)
-    plot(x(g),y(g),'b.') % chaque point est un individu porteur
+    %plot(x(g),y(g),'b.') % chaque point est un individu porteur
 
     axis([0, Sx, 0, Sy]);
     t = t + dt;

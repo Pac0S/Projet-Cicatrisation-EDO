@@ -4,7 +4,7 @@ clear all; clf;
 %% Paramètres graphiques
 
 s = 20;%taille du cadre
-h=0.2;
+h=10;
 
 x0 = 0;
 x1 = s;
@@ -23,7 +23,7 @@ J=J1*J2;
 D = 100;
 Dc = 100;
 
-H = 5;
+H = 0.2;
 k = 0.10;
 
 cm = 40;
