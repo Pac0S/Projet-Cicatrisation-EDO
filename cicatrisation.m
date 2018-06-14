@@ -20,15 +20,16 @@ J=J1*J2;
 
 %% Variables de simulation
 
-D = 100;
-Dc = 100;
+D = 50;
+Dc = 40;
 
-H = 5;
-k = 0.10;
+H = 6;
+k = 10;
 
-cm = 40;
+%cm = 120;
+cm = 20; 
 n0 = 1;
-c0 = 100;
+c0 =10;
 
 alpha = 0.1;
 lambda = 5;
@@ -101,7 +102,7 @@ n(vectbles) = 0;
 %% Conditions initiales :Zone non blessée + condition de Dirichlet
 
 nonbles = setdiff(1:J, vectbles); % Zone non blessée : concentrations à 1
-c(nonbles) = 100;
+c(nonbles) = 10;
 n(nonbles)=1;
 
 
@@ -128,7 +129,7 @@ newc(bordbles) = 1;
 %}
 
 %% Paramètres de simulation
-tfinal = 30;
+tfinal = 0.5;
 t0 = 0;
 t = t0;
 dt = 0.5*h^2/(4*max(D,Dc));
@@ -149,6 +150,7 @@ figure(1); clf;
 subplot(211)
 surf(X,Y,reshape(n,J1,J2),'EdgeColor','none');
 view(2)
+title('Evolution des cellules sur la plaie')
 %view(3)
 %axis([0 20 0 20 0 10])
 colorbar;
@@ -157,10 +159,11 @@ caxis([0,1.2]);
 subplot(212)
 surf(X,Y,reshape(c,J1,J2),'EdgeColor','none');
 view(2)
+title('Concentration du produit chimique dans la plaie')
 %view(3)
 %axis([0 20 0 20 0 10])
 colorbar;
-caxis([0,120]);drawnow;
+caxis([0,20]);drawnow;
 tk = 0;
 pause
 
@@ -175,21 +178,50 @@ while t < tfinal
     %s = k*((2*cm*-H-beta)*c/(cm^2+c.^2))+beta;
     %f = (lambda*c0/n0)*((n0^2+alpha^2)/(n.^2+alpha^2))*n
     
+    %%Adimnsionnel%%
+    
     
     %%%Inhibiteur%%%
     
     %s = ((H-1).*c+H*c0)/(2*(H-1).*c+c0)*k
     %f = lambda*c0/n0.*n
+    
+    
+    
 
-
-
-    newn = n + dt*  (D/(h^2)*L*n +  ((((H-1).*c+H*c0)./(2*(H-1).*c+c0)*k).*n).*(2-n/n0)      - k*n);  
+    %% Activateur
+    
+    newn = n + dt*  (D/(h^2)*L*n +       k*c*(cm^2+c0^2)./(cm^2+c0^2)*n0/c0     - k*n);  
+    newc =c + dt* (Dc/(h^2)*L*c      + (lambda*c0/n0)*((n0^2+alpha^2)./(n.^2+alpha^2)).*n      - lambda * c);
+    newc(nonbles) = 100; %Dirichlet
     newn(nonbles) = 1; %Dirichlet
 
     
-    newc =c + dt* (D/(h^2)*L*c      + lambda*c0/n0.*n/3      - lambda * c);
+%{
+    %% Activateur adimensionnel  
+    newn(nonbles) = 1; %Dirichlet
     newc(nonbles) = 100; %Dirichlet
-  
+%}
+    
+
+%{
+    %% Inhibiteur   
+    newn = n + dt*  (D/(h^2)*L*n +  ((((H-1).*c+H*c0)./(2*(H-1).*c+c0)*k).*n).*(2-n/n0)      - k*n);  
+    newc =c + dt* (Dc/(h^2)*L*c      + lambda*c0/n0.*n      - lambda * c);
+    newc(nonbles) = 10; %Dirichlet
+    newn(nonbles) = 1; %Dirichlet
+%}
+    
+%{
+    %% Inhibiteur adimensionnel  
+    newn = n + dt * (D/(h^2)*L*n + ((H-1).*c+H)./(2*(H-1).*c+1))
+    newc = c + dt * (Dc/(h^2)*L*c + lambda * n - lambda * c);
+    newn(nonbles) = 1; %Dirichlet
+    newc(nonbles) = 1; %Dirichlet
+%}  
+    
+    
+    %% Mise à jour 
         
     n = newn;
     c = newc;
@@ -200,27 +232,29 @@ while t < tfinal
         subplot(211)
         surf(X,Y,reshape(n,J1,J2),'EdgeColor','none');
         view(2)
+        title('Evolution des cellules sur la plaie')
         %view(3)
         %axis([0 20 0 20 0 10])
         colorbar;
-        caxis([0,1.2]);
+        caxis([0,1.20]);
         
         subplot(212)
         surf(X,Y,reshape(c,J1,J2),'EdgeColor','none');
         view(2)
+        title('Concentration du produit chimique dans la plaie')
         %view(3)
         %axis([0 20 0 20 0 10])
         colorbar;
-        caxis([0,120]);
+        caxis([0,20]);
         drawnow;
         tk = 0;
     %end
     
     t = t + dt;
     %tk = tk + k;
-    
-    vect_n(i)=n(3*J1+10);
-    vect_c(i)=c(3*J1+10);
+    120
+    vect_n(i)=n(J/2+0.5);
+    vect_c(i)=c(J/2+0.5);
     i=i+1;
     
     
